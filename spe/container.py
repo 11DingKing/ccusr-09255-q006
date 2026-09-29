@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from spe.config import Settings, get_settings
 from spe.domain.clock import Clock, SystemClock
 from spe.domain.ids import IdGenerator, UuidGenerator
+from spe.domain.services.family_service import FamilyService
 from spe.domain.services.policy_service import PolicyService
 from spe.domain.services.session_service import SessionService
+from spe.infra.db.repositories.family_repositories import SqlFamilyRepository
 from spe.infra.db.repositories.repositories import (
     SqlDailyUsageLedger,
     SqlHeartbeatRepository,
@@ -27,9 +29,11 @@ class Services:
 
     policy_service: PolicyService
     session_service: SessionService
+    family_service: FamilyService
     heartbeats: SqlHeartbeatRepository
     policies: SqlPolicyRepository
     ledger: SqlDailyUsageLedger
+    families: SqlFamilyRepository
     clock: Clock
 
 
@@ -60,6 +64,7 @@ class Container:
         outbox = SqlOutboxRepository(db)
         heartbeats = SqlHeartbeatRepository(db)
         ledger = SqlDailyUsageLedger(db)
+        families = SqlFamilyRepository(db, clock_now=now)
         policy_service = PolicyService(policies, outbox, self.clock, self.ids)
         session_service = SessionService(
             sessions,
@@ -70,13 +75,17 @@ class Container:
             ledger=ledger,
             heartbeats=heartbeats,
             heartbeat_max_gap_seconds=self.settings.heartbeat_max_gap_seconds,
+            families=families,
         )
+        family_service = FamilyService(families, outbox, self.clock, self.ids)
         return Services(
             policy_service=policy_service,
             session_service=session_service,
+            family_service=family_service,
             heartbeats=heartbeats,
             policies=policies,
             ledger=ledger,
+            families=families,
             clock=self.clock,
         )
 

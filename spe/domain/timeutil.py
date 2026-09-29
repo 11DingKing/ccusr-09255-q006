@@ -64,3 +64,39 @@ def split_watch_window(
         remaining -= take
         cursor = cursor + timedelta(seconds=take)
     return segments
+
+
+def split_watch_window_multi(
+    now: datetime, seconds: int, timezones: list[str]
+) -> list[tuple[int, list[str]]]:
+    """按多个时区的本地午夜切分同一观看窗口。
+
+    返回 ``(片段秒数, 每个时区对应的 local_day)`` 的有序列表，日键顺序与
+    入参 ``timezones`` 一致；所有片段秒数之和恰为 ``seconds``。
+    """
+    if seconds <= 0:
+        return []
+    end = now if now.tzinfo is not None else now.replace(tzinfo=UTC)
+    end = end.astimezone(UTC).replace(microsecond=0)
+    start = end - timedelta(seconds=seconds)
+
+    boundaries: set[datetime] = {end}
+    for tz in timezones:
+        cursor = start
+        while True:
+            boundary = next_local_midnight(cursor, tz)
+            if boundary > end:
+                break
+            boundaries.add(boundary)
+            cursor = boundary
+
+    result: list[tuple[int, list[str]]] = []
+    cursor = start
+    for boundary in sorted(boundaries):
+        take = int((boundary - cursor).total_seconds())
+        if take <= 0:
+            continue
+        days = [local_day(cursor, tz).isoformat() for tz in timezones]
+        result.append((take, days))
+        cursor = boundary
+    return result

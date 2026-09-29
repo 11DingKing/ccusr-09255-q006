@@ -116,3 +116,73 @@ class ReplayResponse(BaseModel):
     session_id: str
     policy_version: int
     steps: list[ReplayStepOut]
+
+
+# --- Families ---------------------------------------------------------------
+
+
+class CreateFamilyRequest(BaseModel):
+    """封装领域状态与业务约束。"""
+
+    name: str = Field(min_length=1, max_length=200)
+    timezone: str = "UTC"
+    daily_pool_seconds: int = Field(ge=1, le=24 * 60 * 60)
+
+
+class AdjustPoolRequest(BaseModel):
+    """封装领域状态与业务约束。"""
+
+    daily_pool_seconds: int = Field(ge=1, le=24 * 60 * 60)
+    expected_version: int | None = None
+
+
+class AddMemberRequest(BaseModel):
+    """封装领域状态与业务约束。"""
+
+    user_id: str = Field(min_length=1, max_length=64)
+    floor_seconds: int = Field(default=0, ge=0, le=24 * 60 * 60)
+
+
+class AdjustFloorRequest(BaseModel):
+    """封装领域状态与业务约束。"""
+
+    floor_seconds: int = Field(ge=0, le=24 * 60 * 60)
+
+
+class FamilyOut(BaseModel):
+    id: str
+    tenant_id: str
+    name: str
+    timezone: str
+    daily_pool_seconds: int
+    version: int
+
+
+class FamilyMemberOut(BaseModel):
+    id: str
+    tenant_id: str
+    family_id: str
+    user_id: str
+    floor_seconds: int
+    status: str
+    removed_at: datetime | None = None
+
+
+class MemberUsageOut(BaseModel):
+    user_id: str
+    floor_seconds: int
+    status: str
+    used_seconds: int
+
+
+class FamilyUsageResponse(BaseModel):
+    family: FamilyOut
+    local_day: str
+    pool_used_seconds: int
+    pool_remaining_seconds: int
+    members: list[MemberUsageOut]
+
+
+class UserFamilyUsageResponse(BaseModel):
+    usage: FamilyUsageResponse
+    member: MemberUsageOut

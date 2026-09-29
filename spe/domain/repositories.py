@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from spe.domain.events import DomainEvent
+from spe.domain.family import Family, FamilyMember
 from spe.domain.policy_ast import PolicyDocument
 from spe.domain.session import Session
 
@@ -82,6 +83,71 @@ class DailyUsageLedger(Protocol):
     ) -> int:
         """执行确定性的业务处理。"""
         ...
+
+
+class FamilyRepository(Protocol):
+    """家庭关系与共享池账本存储。"""
+
+    # -- family aggregate ----------------------------------------------------
+    async def add_family(self, family: Family) -> None: ...
+
+    async def save_family(self, family: Family) -> None: ...
+
+    async def get_family(self, tenant_id: str, family_id: str) -> Family | None: ...
+
+    # -- memberships ---------------------------------------------------------
+    async def add_member(self, member: FamilyMember) -> None: ...
+
+    async def save_member(self, member: FamilyMember) -> None: ...
+
+    async def get_member(self, tenant_id: str, member_id: str) -> FamilyMember | None: ...
+
+    async def get_active_member_by_user(
+        self, tenant_id: str, user_id: str
+    ) -> FamilyMember | None: ...
+
+    async def list_members(
+        self, tenant_id: str, family_id: str, *, include_removed: bool = False
+    ) -> list[FamilyMember]: ...
+
+    # -- pool ledger ---------------------------------------------------------
+    async def pool_used(
+        self, tenant_id: str, family_id: str, local_day: str
+    ) -> int: ...
+
+    async def member_used(
+        self, tenant_id: str, family_id: str, user_id: str, local_day: str
+    ) -> int: ...
+
+    async def pool_usage_by_member(
+        self, tenant_id: str, family_id: str, local_day: str
+    ) -> dict[str, int]:
+        """返回 user_id -> 当日已从共享池扣减的秒数。"""
+        ...
+
+    async def charge_pool(
+        self,
+        tenant_id: str,
+        family_id: str,
+        local_day: str,
+        seconds: int,
+        cap_seconds: int,
+    ) -> int:
+        """条件原子扣减共享池。
+
+        仅当 ``当前已用 + seconds <= cap_seconds`` 时累加并返回 1；
+        否则不写入并返回 0。调用方可在同一事务内重读后缩小秒数重试。
+        """
+        ...
+
+    async def add_member_usage(
+        self,
+        tenant_id: str,
+        family_id: str,
+        user_id: str,
+        local_day: str,
+        seconds: int,
+    ) -> None: ...
 
 
 class OutboxRepository(Protocol):

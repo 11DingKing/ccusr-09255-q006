@@ -17,7 +17,7 @@ from spe.container import Container
 from spe.domain.clock import FixedClock
 from spe.domain.ids import SequentialIdGenerator
 from spe.infra.db.base import Base
-from spe.infra.db.ddl import CREATE_ACTIVE_SESSION_INDEX
+from spe.infra.db.ddl import CREATE_ACTIVE_FAMILY_MEMBER_INDEX, CREATE_ACTIVE_SESSION_INDEX
 
 TENANT_A = "tenant-a"
 TENANT_B = "tenant-b"
@@ -47,6 +47,7 @@ async def initialized_container(container: Container) -> AsyncIterator[Container
     async with container.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(text(CREATE_ACTIVE_SESSION_INDEX))
+        await conn.execute(text(CREATE_ACTIVE_FAMILY_MEMBER_INDEX))
     yield container
     await container.dispose()
 
@@ -73,6 +74,7 @@ async def file_client(tmp_path, clock: FixedClock) -> AsyncIterator[AsyncClient]
     async with container.engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(text(CREATE_ACTIVE_SESSION_INDEX))
+        await conn.execute(text(CREATE_ACTIVE_FAMILY_MEMBER_INDEX))
     app = create_app(container)
     app.state.container = container
     transport = ASGITransport(app=app)

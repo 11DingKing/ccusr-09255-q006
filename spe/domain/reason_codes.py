@@ -26,6 +26,9 @@ class ReasonCode(StrEnum):
     DENIED_SESSION_LIMIT_REACHED = "DENIED_SESSION_LIMIT_REACHED"
     """The current session has reached its maximum allowed duration."""
 
+    DENIED_FAMILY_POOL_REACHED = "DENIED_FAMILY_POOL_REACHED"
+    """The family shared daily watch-time pool is exhausted for this member."""
+
     # --- Deny outcomes: time windows ---------------------------------------
     DENIED_BEDTIME_CURFEW = "DENIED_BEDTIME_CURFEW"
     """The local time falls inside a configured bedtime curfew window."""
@@ -79,3 +82,19 @@ class ReasonCode(StrEnum):
 
     REJECTED_TENANT_MISMATCH = "REJECTED_TENANT_MISMATCH"
     """The resource belongs to a different tenant than the caller."""
+
+    # --- Family sharing -----------------------------------------------------
+    REJECTED_FAMILY_NOT_FOUND = "REJECTED_FAMILY_NOT_FOUND"
+    """The referenced family does not exist within the caller's tenant."""
+
+    REJECTED_FAMILY_MEMBER_NOT_FOUND = "REJECTED_FAMILY_MEMBER_NOT_FOUND"
+    """The referenced family membership does not exist within the tenant."""
+
+    REJECTED_FAMILY_MEMBER_ALREADY_ACTIVE = "REJECTED_FAMILY_MEMBER_ALREADY_ACTIVE"
+    """The user already has an active membership in a family."""
+
+    REJECTED_FAMILY_FLOOR_EXCEEDS_POOL = "REJECTED_FAMILY_FLOOR_EXCEEDS_POOL"
+    """The sum of active members' personal floors exceeds the family pool."""
+
+    REJECTED_FAMILY_VERSION_CONFLICT = "REJECTED_FAMILY_VERSION_CONFLICT"
+    """The adjustment was based on a stale family version."""
